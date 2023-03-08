@@ -17,30 +17,28 @@ class Binary:
     the 'rates' argument then sample according to ba_lims.
     
     Args:
-        M: (int) methods
-        N: (int) samples
-        N1: (int) positive class samples
+        m: (int) methods
         ba_lims : (float min_ba, float max_ba), such that each value
             v is 0 <= v <= 1
         rates : (dict, default None) dict keys value pairs of 
             ((M,) ndarray) of true positive rates, and 
             ((M,) ndarray) of true negative rates
-        rng: 
+        seed: 
     """
-    def __init__(self, M, N, N1, 
+    def __init__(self, m_classifiers,
                  ba_lims=(0.35, 0.9),
                  rates = None,
-                 rng = None):
+                 seed = None):
         
-        self.M, self.N, self.N1 = M, N, N1
+        self.m = m_classifiers
 
-        self.rng = np.random.defaul_rng(rng)
+        self.rng = np.random.default_rng(rng)
 
         if rates is None:
             self.ba, self.tpr, self.tnr = self._sample_rates_from_ba_lims(ba_lims)
 
         elif isinstance(rates, dict):
-            for j in range(self.M):
+            for j in range(self.m):
                 if rates["tpr"][j] < 0 or rates["tpr"][j] > 1:
                     raise ValueError("Each tpr must be between 0 and 1")
                 
@@ -54,9 +52,6 @@ class Binary:
             raise TypeError("Rates must be a dictionary with keys\n "
                              "'tpr' and 'tnr' and the values as M "
                              "length\nnumpy arrays of rates.")
-            
-        self.labels = np.hstack([np.ones(N1), 
-                                 -np.ones(N-N1)])
 
     @staticmethod
     def _sample_tpr_given_ba(ba):
@@ -119,7 +114,7 @@ class Binary:
 
         delta_ba = np.max([0, ba_lims[1] - ba_lims[0]])
 
-        ba = self.rng.rand(self.M) * delta_ba + ba_lims[0]
+        ba = self.rng.rand(self.m) * delta_ba + ba_lims[0]
 
         tpr = self._sample_tpr_given_ba(ba)
 
@@ -135,36 +130,41 @@ class Binary:
         """
         return 0.5*(self.tpr + self.tnr)
 
-    def sim(self):
+    def sample(self, n_samples, n_positive_class):
         """Generate simulation data, and store as class properties.
         
-        Generated properties:
-        self.data : ndarray
-        (M, N) ndarray of binary [-1, 1] predictions
+        Args:
+            n_samples: (int)
+            n_positive_class: (int)
 
-        
-        self.data : ndarray
-        (M, N) ndarray of M binary classifier binary predictions of N samples
+        Returns:
+            data: ((m, n_samples) ndarray)
+            labels: ((n_samples,) ndarray)
         """
         # initialize ndarrays
-        self.data = np.zeros(shape=(self.M, self.N))
+        data = np.zeros(shape=(self.m, n_samples))
 
-        # generate samples for each classifier
-        for j in range(self.M):
+        labels = np.hstack([np.ones(n_positive_class),
+            np.zeros(n_samples - n_positive_class)])
+
+        for j in range(self.m):
             
-            # loop over samples
-            for i in range(self.N):
-                # generate random number u between 0 and 1
+            for i in range(n_positive_class):
                 u = self.rng.rand()
                 
-                # if true sample label is positive, then sample
-                # from true positive rate
-                if self.labels[i] == 1:
-                    self.data[j, i] = 1 if u <= self.tpr[j] else -1
-                # if samples are not from the positive class, 
-                # they are from negative class
-                else:
-                    self.data[j, i] = -1 if u <= self.tnr[j] else 1
+                data[j, i] = 1 if u <= self.tpr[j] else -1
+
+            for i in range(n_positive_class, n_samples):
+                u = self.rng.rand()
+
+                data[j, i] = -1 if u <= self.tnr[j] else 1
+
+        idx = np.arange(n_samples)
+        rng.shuffle(idx)
+
+        data = data[:, idx]
+
+        return data[:, idx], labels[idx]
 
 
 class EnsembleGaussianPredictions:

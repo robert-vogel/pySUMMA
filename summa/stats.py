@@ -365,7 +365,8 @@ def tpr(self, predictions, true_labels, positive_encoding=1):
     return true_rates(predictions, true_labels, positive_encoding)
 
 
-def ba(predictions, true_labels, positive_encoding=1, negative_encoding=-1):
+def ba(predictions, true_labels, 
+        positive_encoding=1, negative_encoding=-1):
     """Compute the balanced accuracy.
 
     Args:

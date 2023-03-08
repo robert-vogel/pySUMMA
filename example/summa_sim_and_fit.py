@@ -24,7 +24,7 @@ data, labels = sim.sample(n_samples, n_positive_samples)
 cl_summa = cls.Summa()
 cl_summa.fit(data)
 
-with open("inferred_prevalence.txt", "w") as fid:
+with open("summa_inferred_prevalence.txt", "w") as fid:
     fid.write("Positive Class Prevalence\n"
             f"Inferred:\t{cl_summa.prevalence:0.3f}\n"
             f"True:\t\t{prevalence:0.3f}")
