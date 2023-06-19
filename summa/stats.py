@@ -95,7 +95,7 @@ def l2_vector_norm(x):
     """
     if isinstance(x, np.ndarray):
         return np.sqrt(np.sum(x * x))
-    elif isinstance(x, list) or isinstance(x, tuple):
+    elif isinstance(x, (tuple, list)):
         s = 0
         for w in x:
             s += w**2

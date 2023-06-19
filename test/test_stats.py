@@ -55,16 +55,18 @@ class TestVarianceRank(TestCase):
 
 
 class TestThirdMoment(TestCase):
-    def setUp(self):
-        self.m, self.n = 10, 2500
-        ranks = np.arange(1, self.n+1)
+    m, n = 10, 2500
+    ranks = np.arange(1, n+1)
 
+    def setUp(self):
         rng = np.random.default_rng()
         self.data = np.zeros(shape=(self.m, self.n))
         self.norm_constant = self.n / ((self.n-1) * (self.n-2))
 
         for i in range(self.m):
-            self.data[i, :] = rng.choice(ranks, size=self.n, replace=False)
+            self.data[i, :] = rng.choice(self.ranks,
+                                         size=self.n, 
+                                         replace=False)
 
 
     def test_inputs(self):
