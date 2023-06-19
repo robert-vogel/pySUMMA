@@ -29,10 +29,10 @@ class EnsembleABC:
         """Compute scores by weighted sum
 
         Args:
-            data : ((m, n) ndarray) 
+            data : ((m_cls, n_samples) np.ndarray) 
 
         Returns:
-           s: ((n,) ndarray) scores
+           s: ((n,) np.ndarray) scores
         """
         if data.ndim != 2:
             raise ValueError("Requsite input ((m, n) ndarray), not " 
@@ -41,10 +41,10 @@ class EnsembleABC:
             raise ValueError("Input sample does not consist "
                               f"of predictions by {self.m_cls} methods")
 
-        s = 0
-        for j, w in enumerate(self.weights):
-            s += w * data[j, :]
-        return s
+        sample_scores = 0
+        for j, weight in enumerate(self.weights):
+            sample_scores += weight * data[j, :]
+        return sample_scores
 
     def get_inference(self, data):
         """Estimate class labels from scores.
@@ -55,9 +55,11 @@ class EnsembleABC:
         Returns:
             labels: ((n,) ndarray) inferred sample class labels
         """
-        labels = self.get_scores(data)
-        labels[labels >= 0] = self._positive_class
-        labels[labels < 0] = self._negative_class
+        sample_scores = self.get_scores(data)
+
+        labels = np.full(self.n_samples, self._negative_class)
+        labels[sample_scores >= 0] = self._positive_class
+
         return labels
 
 
