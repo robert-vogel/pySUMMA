@@ -285,8 +285,5 @@ class Sml(EnsembleABC):
             self._tensor_sv = tensor.fit(
                     stats.third_central_moment(data),
                     self._eig_vec)
-        
+
         self.weights = self._eig_vec
-
-
-

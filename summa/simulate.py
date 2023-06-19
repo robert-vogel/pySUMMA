@@ -8,7 +8,6 @@ import numpy as np
 from scipy.special import ndtri
 
 from summa import stats
-        
 
 class Binary:
     """Simulate the binary predictions by an ensemble of base classifiers.
@@ -34,7 +33,7 @@ class Binary:
         
         self.M, self.N, self.N1 = M, N, N1
 
-        self.rng = np.random.defaul_rng(rng)
+        self.rng = np.random.default_rng(rng)
 
         if rates is None:
             self.ba, self.tpr, self.tnr = self._sample_rates_from_ba_lims(ba_lims)
@@ -359,4 +358,3 @@ class EnsembleRankPredictions(EnsembleGaussianPredictions):
             scores[:, j] = super().sample(labels[j])
 
         return stats.rank_transform(scores), labels
-
