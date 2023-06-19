@@ -1,3 +1,7 @@
+"""Test classifiers
+
+By Robert Vogel
+"""
 from unittest import TestCase, main
 
 import numpy as np
@@ -5,28 +9,28 @@ from summa import classifiers as cls
 
 
 class TestEnsembleAbc(TestCase):
-    n, m = 1000, 7
+    n_samples, m_cls = 1000, 7
     n_positive = 300
 
-    data = np.arange(n).reshape(1,n) + 1
-    data = np.tile(data, (m, 1))
+    data = np.arange(n_samples).reshape(1,n_samples) + 1
+    data = np.tile(data, (m_cls, 1))
 
     def get_labels(self, positive_encoding, negative_encoding):
         return np.hstack([np.full(self.n_positive, positive_encoding),
-            np.full(self.n - self.n_positive, negative_encoding)])
+            np.full(self.n_samples - self.n_positive, negative_encoding)])
 
     def set_up_ens_params(self):
         abc = cls.EnsembleABC()
-        abc.n, abc.m = self.n, self.m
-        abc.weights = np.ones(self.m) / self.m
-        abc._prevalence = self.n_positive / self.n
+        abc.n_samples, abc.m_cls = self.n_samples, self.m_cls
+        abc.weights = np.ones(self.m_cls) / self.m_cls
+        abc._prevalence = self.n_positive / self.n_samples
         return abc
 
     def test_init_assignments(self):
         abc = cls.EnsembleABC()
 
-        self.assertIsNone(abc.n)
-        self.assertIsNone(abc.m)
+        self.assertIsNone(abc.n_samples)
+        self.assertIsNone(abc.m_cls)
         self.assertIsNone(abc._positive_class)
         self.assertIsNone(abc._negative_class)
         self.assertIsNone(abc._prevalence)
@@ -34,7 +38,7 @@ class TestEnsembleAbc(TestCase):
 
     def test_name(self):
         abc = cls.EnsembleABC()
-        
+
         self.assertEqual(abc.name, "EnsembleABC")
 
     def test_fit_raises(self):
@@ -52,7 +56,7 @@ class TestEnsembleAbc(TestCase):
 
     def test_get_scores_raises(self):
         abc = self.set_up_ens_params()
-          
+
         with self.assertRaises(AttributeError):
             abc.get_scores(self.data.tolist())
 
@@ -75,7 +79,7 @@ class TestEnsembleAbc(TestCase):
 
     def test_inference_raises(self):
         abc = self.set_up_ens_params()
-          
+
         with self.assertRaises(AttributeError):
             abc.get_scores(self.data.tolist())
 
@@ -95,7 +99,7 @@ class TestEnsembleAbc(TestCase):
         abc._positive_class = 1
         abc._negative_class = 0
 
-        
+
         # all samples should be positive class
         inferred_labels = abc.get_inference(self.data)
 
@@ -110,7 +114,7 @@ class TestEnsembleAbc(TestCase):
 
         for l in inferred_labels:
             self.assertEqual(l, abc._negative_class)
-    
+
         # the number of positive class samples should be n_positive
 
         data = self.data.copy()
@@ -125,7 +129,7 @@ class TestEnsembleAbc(TestCase):
 
     def test_inference_2(self):
         """Test inference for 1,-1 class encodings"""
-        abc = self.set_up_ens_params() 
+        abc = self.set_up_ens_params()
 
         abc._positive_class = 1
         abc._negative_class = -1
@@ -144,7 +148,7 @@ class TestEnsembleAbc(TestCase):
 
         for l in inferred_labels:
             self.assertEqual(l, abc._negative_class)
-    
+
         # the number of positive class samples should be n_positive
 
         data = self.data.copy()

@@ -9,10 +9,10 @@ from . import stats
 
 
 class EnsembleABC:
+    """Base class for ensemble methods of summa package."""
     def __init__(self):
-        """Base class for ensemble methods of summa package."""
-        self.n = None                   # num samples
-        self.m = None                   # num base classifiers
+        self.n_samples = None                   # num samples
+        self.m_cls = None                   # num base classifiers
         self._positive_class = None
         self._negative_class = None
         self._prevalence = None
@@ -37,9 +37,9 @@ class EnsembleABC:
         if data.ndim != 2:
             raise ValueError("Requsite input ((m, n) ndarray), not " 
                               f"{data.ndim}")
-        if data.shape[0] != self.m:
+        if data.shape[0] != self.m_cls:
             raise ValueError("Input sample does not consist "
-                              f"of predictions by {self.m} methods")
+                              f"of predictions by {self.m_cls} methods")
 
         s = 0
         for j, w in enumerate(self.weights):
@@ -100,7 +100,7 @@ class SummaABC(EnsembleABC):
     @property
     def auc(self):
         """Inferred AUC."""
-        return self.delta / self.n + 0.5
+        return self.delta / self.n_samples + 0.5
 
     @property
     def prevalence(self):
@@ -141,7 +141,7 @@ class Summa(SummaABC):
         """
         stats.is_rank(data)
 
-        self.m, self.n = data.shape
+        self.m_cls, self.n_samples = data.shape
 
         self._negative_class = 0
         self._positive_class = 1
@@ -172,12 +172,12 @@ class RankWoc(EnsembleABC):
             return stats.mean_rank(data.shape[1]) - s
 
     def fit(self, data):
-        self.m, self.n = data.shape
+        self.m_cls, self.n_samples = data.shape
 
         self._positive_class = 1
         self._negative_class = 0
 
-        self.weights = np.full(self.m, 1 / self.m)
+        self.weights = np.full(self.m_cls, 1 / self.m_cls)
 
 
 class BinaryWoc(EnsembleABC):
@@ -187,12 +187,12 @@ class BinaryWoc(EnsembleABC):
         prevalence: 
     """
     def fit(self, data):
-        self.m, self.n = data.shape
+        self.m_cls, self.n_samples = data.shape
 
         self._positive_class = 1
         self._negative_class = -1
 
-        self.weights = np.full(self.m, 1 / self.m)
+        self.weights = np.full(self.m_cls, 1 / self.m_cls)
         
     def get_scores(self, data):
         if stats.is_binary(data):
@@ -272,7 +272,7 @@ class Sml(EnsembleABC):
         if not stats.is_binary(data):
             return None
 
-        self.m, self.n = data.shape
+        self.m_cls, self.n_samples = data.shape
 
         self._negative_class = -1
         self._positive_class = 1
