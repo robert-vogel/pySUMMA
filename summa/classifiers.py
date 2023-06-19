@@ -121,13 +121,6 @@ class Summa(EnsembleABC):
 
         return self._prevalence
 
-    def get_scores(self, data):
-        stats.is_rank(data)
-
-        sample_scores = super().get_scores(data)
-
-        return stats.mean_rank(data.shape[1]) - sample_scores
-
     def fit(self, data, tol=1e-3, max_iter=500):
         """Infer SUMMA weights from unlabeled data.
 
@@ -157,6 +150,20 @@ class Summa(EnsembleABC):
                     self._eig_vec)
 
         self.weights = self._eig_vec
+
+    def get_scores(self, data):
+        """Compute Summa sample scores.
+        
+        Args:
+            data: ((m_cls, n_sample) np.ndarray) of rank data
+
+        Returns:
+            ((n_sample,) np.ndarray) sample scores or None if data are not rank
+        """
+        if stats.is_rank(data):
+            sample_scores = super().get_scores(data)
+
+            return stats.mean_rank(data.shape[1]) - sample_scores
 
 
 class RankWoc(EnsembleABC):

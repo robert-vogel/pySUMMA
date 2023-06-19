@@ -245,16 +245,65 @@ class TestRank(TestCase):
         self.assertTrue(all(stats.rank_transform(scores, ascending=True) == true_rank))
 
 
-# TODO
 class TestIsRank(TestCase):
-    pass
+    def setUp(self):
+        rng = np.random.default_rng()
+        self.n_samples = 100
+        self.m_cls = 4
 
+        self.data = np.tile(np.arange(1, self.n_samples + 1).reshape(1, self.n_samples),
+                            (self.m_cls,1))
+
+        for i in range(self.m_cls):
+            rng.shuffle(self.data[i, :])
+
+    def test_true(self):
+        self.assertTrue(stats.is_rank(self.data))
+
+        for i in range(self.m_cls):
+            self.assertTrue(stats.is_rank(self.data[i, :]))
+
+        self.assertTrue(stats.is_rank(np.array([1])))
+
+    def test_false(self):
+        data = self.data.copy()
+        data = data.astype(np.float64)
+        data[1,5] = data[1,4]
+        self.assertFalse(stats.is_rank(data))
+
+        data[1,5] = np.nan
+        self.assertFalse(stats.is_rank(data))
+
+        self.assertFalse(stats.is_rank(np.array([-1])))
+
+        self.assertFalse(stats.is_rank(np.array([0])))
+
+        data = np.hstack([np.arange(1,5), np.arange(1,5)])
+        self.assertFalse(stats.is_rank(data))
+
+    def test_exception(self):
+        data = np.tile(np.arange(1, self.n_samples+1), (3,1,3))
+
+        with self.assertRaises(ValueError):
+            stats.is_rank(data)
+
+        with self.assertRaises(AttributeError):
+            stats.is_rank(self.data.tolist())
+
+        with self.assertRaises(AttributeError):
+            stats.is_rank(25)
 
 class TestIsBinary(TestCase):
-    rng = np.random.default_rng()
-    n = 100
-    m = 4
-    data = rng.choice([-1, 1], size=(m, n)).astype(np.float64)
+    def setUp(self):
+        rng = np.random.default_rng()
+        self.n = 100
+        self.m = 4
+        self.n_positives = 25
+        self.data = np.hstack([np.ones(shape=(self.m, self.n_positives)),
+                              np.full((self.m, self.n-self.n_positives), -1)])
+
+        for i in range(self.m):
+            rng.shuffle(self.data[i, :])
 
     def test_true_cases(self):
         self.assertTrue(stats.is_binary(self.data))
@@ -263,12 +312,6 @@ class TestIsBinary(TestCase):
 
         data = self.data.copy()
         data = data.reshape((2,2,100))
-        self.assertTrue(stats.is_binary(data))
-
-        data = np.ones(shape=(self.m, self.n))
-        self.assertTrue(stats.is_binary(data))
-        
-        data = np.full((self.m, self.n), -1)
         self.assertTrue(stats.is_binary(data))
 
     def test_false_cases(self):
@@ -284,6 +327,13 @@ class TestIsBinary(TestCase):
 
         data = np.array([])
         self.assertFalse(stats.is_binary(data))
+
+        data = np.ones(shape=(self.m, self.n))
+        self.assertFalse(stats.is_binary(data))
+
+        data = np.full((self.m, self.n), -1)
+        self.assertFalse(stats.is_binary(data))
+
 
 
 # TODO

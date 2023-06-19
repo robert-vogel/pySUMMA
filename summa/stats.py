@@ -278,48 +278,46 @@ def _compute_ranks(data, ascending):
     return rdata
 
 
-def is_rank(X):
+def is_rank(data):
     """Test whether data are sample rank.
 
     Args:
-        X : ((n,) ndarray) or ((m, n) ndarray) 
+        data : ((n,) ndarray) or ((m, n) ndarray) 
             
     Returns:
         (bool)
     """
-    if X.ndim == 1:
-        r_true = np.arange(1, X.size+1)
-        return np.setdiff1d(r_true, X).size == 0
-    elif X.ndim == 2:
-        truth_val = True
-        r_true = np.arange(1, X.shape[1]+1)
+    if data.ndim == 1:
+        r_true = np.arange(1, data.size+1)
+        return np.setdiff1d(r_true, data).size == 0
 
-        for i in range(X.shape[0]):
-            if np.setdiff1d(r_true, X[i, :]).size != 0:
-                truth_val = False
-                break
-        return truth_val
+    if data.ndim == 2:
+        r_true = np.arange(1, data.shape[1]+1)
+
+        for i in range(data.shape[0]):
+            if (_is_rank := np.setdiff1d(r_true, data[i, :]).size == 0):
+                continue
+
+            return _is_rank
+        return _is_rank
 
     raise ValueError("Data must be a 1-d or 2-d ndarray.")
 
 
-def is_binary(X):
+def is_binary(data):
     """Test whether data is comprised of binary values, -1 and 1.
 
     Args: 
-        X : (ndarray)
+        data : (ndarray)
 
     Returns:
         (bool)
     """
     binary_set = np.array([-1,1])
-    vals = np.unique(X)
-    
-    set_diff = np.setdiff1d(vals, binary_set).size
-    if vals.size > 0 and set_diff == 0: 
-        return True
+    vals = np.unique(data)
 
-    return False
+    return (np.setdiff1d(vals, binary_set).size == 0 and
+            np.setdiff1d(binary_set, vals).size == 0)
 
 
 def true_rates(predictions, true_labels, class_encoding):
