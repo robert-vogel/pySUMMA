@@ -46,7 +46,7 @@ class TestMatrix(TestCase):
 
         mat = decomp.Matrix(self.max_iter, self.tol)
 
-        eig_val, eig_vec, num_iters = mat._infer_matrix(self.q)
+        eig_val, eig_vec, num_iters = mat._infer_matrix(self.q, False)
 
         self.assertEqual(num_iters, 2)
         self.assertAlmostEqual(eig_val, self.eig_val)

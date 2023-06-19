@@ -63,7 +63,14 @@ class EnsembleABC:
         return labels
 
 
-class SummaABC(EnsembleABC):
+class Summa(EnsembleABC):
+    """Apply SUMMA ensemble to data.
+
+    Args:
+        prevalence: the fraction of samples from the positive class.
+            When None, infer prevalence from data. 
+            (float [0,1] or None, default None)
+    """
     def __init__(self, prevalence=None):
         super().__init__()
 
@@ -114,21 +121,12 @@ class SummaABC(EnsembleABC):
 
         return self._prevalence
 
-
-class Summa(SummaABC):
-    """Apply SUMMA ensemble to data.
-
-    Args:
-        prevalence: the fraction of samples from the positive class.
-            When None, infer prevalence from data. 
-            (float [0,1] or None, default None)
-    """
     def get_scores(self, data):
         stats.is_rank(data)
 
-        s = super().get_scores(data)
+        sample_scores = super().get_scores(data)
 
-        return stats.mean_rank(data.shape[1]) - s
+        return stats.mean_rank(data.shape[1]) - sample_scores
 
     def fit(self, data, tol=1e-3, max_iter=500):
         """Infer SUMMA weights from unlabeled data.
@@ -147,16 +145,17 @@ class Summa(SummaABC):
 
         self._negative_class = 0
         self._positive_class = 1
-        
+
         mat = decomp.Matrix(tol=tol, max_iter=max_iter)
-        self._eig_val, self._eig_vec, self._num_iters = mat.fit(np.cov(data))
+        self._eig_val, self._eig_vec, self._num_iters = mat.fit(np.cov(data),
+                                                                return_iters=False)
 
         if self._prevalence is None:
             tensor = decomp.Tensor()
             self._tensor_sv = tensor.fit(
                     stats.third_central_moment(data),
                     self._eig_vec)
-        
+
         self.weights = self._eig_vec
 
 

@@ -41,35 +41,35 @@ class Matrix:
         self.tol = tol
 
     @staticmethod
-    def _update_r(Q_off_diagonal, R):
+    def _update_r(cov_off_diagonal, rank_one_matrix):
         '''Update the estimate of the rank one matrix.
     
         Args:
-            Q_off_diagonal: Covariance matrix with diagonal 
+            cov_off_diagonal: Covariance matrix with diagonal 
                 entries set to zero ((M, M) ndarray)
-            R: estimated Rank one matrix ((M, M) ndarray)
+            rank_one_matrix: estimated Rank one matrix ((M, M) ndarray)
     
         Returns:
-            ((M, M) ndarray) Updated estimate of the rank one matrix R, 
+            ((M, M) ndarray) Updated estimate of the rank one matrix rank_one_matrix, 
                 
-            (float) eigenvalue of R 
-            ((M,) ndarray) eigenvector of R
+            (float) eigenvalue of rank_one_matrix 
+            ((M,) ndarray) eigenvector of rank_one_matrix
         '''
-        l, v = np.linalg.eigh(R)
+        eig_val, eig_vec = np.linalg.eigh(rank_one_matrix)
 
         # compute the diagonal of a rank one matrix
-        rdiag = np.diag(l[-1] * v[:, -1]**2)
+        rdiag = np.diag(eig_val[-1] * eig_vec[:, -1]**2)
 
-        return (Q_off_diagonal + rdiag, l[-1], v[:, -1])
+        return (cov_off_diagonal + rdiag, eig_val[-1], eig_vec[:, -1])
 
-    def _infer_matrix(self, Q, return_iters = False):
+    def _infer_matrix(self, cov_matrix, return_iters):
         """Algorithm for inferring performance vector.
 
         Algorithm for inferring the diagonal entries which would make
         the covariance matrix Q, of full rank, a rank one matrix.
     
         Args:
-            Q: ((M, M) ndarray) covariance matrix
+            cov_matrix: ((M, M) ndarray) covariance matrix
             return_items: (bool) return values for each iteration? 
                 (default False)
     
@@ -87,17 +87,18 @@ class Matrix:
         Raises:
             RuntimeError: raised when convergence criteria not met.
         """
-        Q_off_diagonal = Q - np.diag(np.diag(Q))
-        R = Q.copy()
+        cov_off_diagonal = cov_matrix - np.diag(np.diag(cov_matrix))
+        rank_one_matrix = cov_matrix.copy()
 
         j = 0
 
-        epsilon = np.sum(2*np.diag(Q))
+        epsilon = np.sum(2*np.diag(cov_matrix))
         eig_values = [epsilon]
 
         while epsilon > self.tol and j < self.max_iter:
             # decompose the rank one approximation
-            R, eig_value, eig_vector = self._update_r(Q_off_diagonal, R)
+            rank_one_matrix, eig_value, eig_vector = self._update_r(cov_off_diagonal,
+                                                      rank_one_matrix)
 
             epsilon = np.abs(eig_values[-1] - eig_value)
 
@@ -115,35 +116,37 @@ class Matrix:
         # correctly rank samples according to latent class
         # consequently the majority of Eigenvector
         # elements should be positive.
-        if np.sum(eig_vector < 0) > Q.shape[0]/2:
+        if np.sum(eig_vector < 0) > cov_matrix.shape[0]/2:
             eig_vector = -eig_vector
 
         if return_iters:
             return (eig_value, eig_vector, eig_values[1:], j)
-        else:
-            return (eig_value, eig_vector, j)
 
-    def fit(self, Q):
-        """Find the diagonal entries that make Q a rank one matrix.
+        return (eig_value, eig_vector, j)
+
+    def fit(self, cov_matrix, return_iters=False):
+        """Find the diagonal entries that make cov_matrix a rank one matrix.
 
         Args:
-            Q: The covariance matrix ((M, M) ndarray)
-        
+            cov_matrix: The covariance matrix ((M, M) ndarray)
+            return_iters: should the 
         Returns:
             eig_value: (float) 
             eig_vector: (ndarray) 
             num_iters: (int) 
         """
-        if Q.shape[0] < 3:
+        if cov_matrix.shape[0] < 3:
             raise ValueError(("The minimum required number of "
                             "base classifiers is 3."))
-        elif Q.ndim != 2:
+
+        if cov_matrix.ndim != 2:
             raise ValueError(("Input ndarray must be a matrix "
                             "(ndim == 2)."))
-        elif not np.array_equal(Q, Q.T):
+
+        if not np.array_equal(cov_matrix, cov_matrix.T):
             raise ValueError("Not a symmetric matrix.")
 
-        return self._infer_matrix(Q)
+        return self._infer_matrix(cov_matrix, return_iters)
 
 
 class Tensor:
