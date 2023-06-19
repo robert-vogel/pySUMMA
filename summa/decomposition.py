@@ -7,36 +7,36 @@ import numpy as np
 from scipy.special import comb
 
 class Matrix:
-    def __init__(self, max_iter = 5000, tol=1e-6):
-        '''Implement the iterative inference from Ahsen et al. [2].
+    """Implement the iterative inference from Ahsen et al. [2].
 
-        It has been shown that the covariance matrix of conditionally 
-        independent binary [1] and rank [2] base classifier predictions
-        has a special structure.  This is that the off-diagonal 
-        elements i,j are proportional to the product of the i^th and 
-        j^th base classifier's performance as measured by the balanced 
-        accuracy [1] or the difference of sample class conditioned 
-        average rank predictions [2].  Consequently, these entries are 
-        those of a rank one matrix formed by the outer product of a 
-        vector encoding base classifier performances.
+    It has been shown that the covariance matrix of conditionally 
+    independent binary [1] and rank [2] base classifier predictions
+    has a special structure.  This is that the off-diagonal 
+    elements i,j are proportional to the product of the i^th and 
+    j^th base classifier's performance as measured by the balanced 
+    accuracy [1] or the difference of sample class conditioned 
+    average rank predictions [2].  Consequently, these entries are 
+    those of a rank one matrix formed by the outer product of a 
+    vector encoding base classifier performances.
 
-        In this module we infer the performance vector from the 
-        empirical covariance matrix by implementing the iterative 
-        procedue of Ahsen et al. [2].
+    In this module we infer the performance vector from the 
+    empirical covariance matrix by implementing the iterative 
+    procedue of Ahsen et al. [2].
 
-        References:
-            1. F. Parisi, et al. Ranking and combining multiple 
-                predictors without labeled data. Proceedings of the 
-                National Academy of Sciences, 111(4):1253--1258, 2014.
+    References:
+        1. F. Parisi, et al. Ranking and combining multiple 
+            predictors without labeled data. Proceedings of the 
+            National Academy of Sciences, 111(4):1253--1258, 2014.
         
-            2. M.E. Ahsen, R. Vogel, and G. Stolovitzky. Unsupervised 
-                evaluation and weighted aggregation of ranked 
-                predictions. arXiv preprint arXiv:1802.04684, 2018.
+        2. M.E. Ahsen, R. Vogel, and G. Stolovitzky. Unsupervised 
+            evaluation and weighted aggregation of ranked 
+            predictions. arXiv preprint arXiv:1802.04684, 2018.
 
-        Args:
-            max_iter: max number of iterations (int, default 5000)
-            tol: stopping threshold (float, default 1e-6)
-        '''
+    Args:
+        max_iter: max number of iterations (int, default 5000)
+        tol: stopping threshold (float, default 1e-6)
+    """
+    def __init__(self, max_iter = 5000, tol=1e-6):
         self.max_iter = max_iter
         self.tol = tol
 
@@ -56,15 +56,15 @@ class Matrix:
             ((M,) ndarray) eigenvector of R
         '''
         l, v = np.linalg.eigh(R)
-        
+
         # compute the diagonal of a rank one matrix
         rdiag = np.diag(l[-1] * v[:, -1]**2)
-        
+
         return (Q_off_diagonal + rdiag, l[-1], v[:, -1])
-    
+
     def _infer_matrix(self, Q, return_iters = False):
         """Algorithm for inferring performance vector.
-    
+
         Algorithm for inferring the diagonal entries which would make
         the covariance matrix Q, of full rank, a rank one matrix.
     
@@ -91,33 +91,33 @@ class Matrix:
         R = Q.copy()
 
         j = 0
-        
+
         epsilon = np.sum(2*np.diag(Q))
         eig_values = [epsilon]
-    
+
         while epsilon > self.tol and j < self.max_iter:
             # decompose the rank one approximation
             R, eig_value, eig_vector = self._update_r(Q_off_diagonal, R)
-             
+
             epsilon = np.abs(eig_values[-1] - eig_value)
-    
+
             eig_values += [eig_value]
             j += 1
-        
+
         if j == self.max_iter:
             raise RuntimeError(("Matrix decomp. did not converge:\n"
                                 "a) Increase the maximum number of"
-                                f" iterations above {max_iter:d}, or \n"
+                                f" iterations above {self.max_iter:d}, or \n"
                                 "b) increase the minimum"
-                                f" tolerance above {tol:.4f}."))
-    
-        # Assume that the majority of methods 
+                                f" tolerance above {self.tol:.4f}."))
+
+        # Assume that the majority of methods
         # correctly rank samples according to latent class
         # consequently the majority of Eigenvector
         # elements should be positive.
         if np.sum(eig_vector < 0) > Q.shape[0]/2:
             eig_vector = -eig_vector
-        
+
         if return_iters:
             return (eig_value, eig_vector, eig_values[1:], j)
         else:
@@ -165,7 +165,7 @@ class Tensor:
                 such that i \neq j \neq k (list)
         """
         idx = list(range(comb(M, 3, exact=True)))
-        
+
         l = 0
         for i in range(M-2):
             for j in range(i+1, M-1):
@@ -198,14 +198,14 @@ class Tensor:
         eig_vals = np.zeros(len(tensor_idx))
 
         for i, t_idx in enumerate(tensor_idx):
-            tensor_vals[i] = third_moment_tensor[t_idx[0], 
-                                                     t_idx[1], 
-                                                     t_idx[2]]
+            tensor_vals[i] = third_moment_tensor[t_idx[0],
+                                                 t_idx[1],
+                                                 t_idx[2]]
 
-            eig_vals[i] = (eig_vec[t_idx[0]] * 
+            eig_vals[i] = (eig_vec[t_idx[0]] *
                             eig_vec[t_idx[1]] *
                             eig_vec[t_idx[2]])
-        
+
         return (eig_vals, tensor_vals)
 
     def fit(self, third_moment_tensor, eig_vec):
@@ -229,7 +229,7 @@ class Tensor:
             raise ValueError("Input tensor should be an MxMxM and"
                              "input vector M length ndarray")
 
-        eig_vals, tensor_vals = self._get_vals(third_moment_tensor, 
+        eig_vals, tensor_vals = self._get_vals(third_moment_tensor,
                                                eig_vec)
 
         if eig_vals.size == 1:
